@@ -1,0 +1,38 @@
+---
+- name: Create and configure Docker container with Apache
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == 'Debian'
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Ensure Docker service is started
+      service:
+        name: docker
+        state: started
+
+    - name: Build Apache Docker image
+      docker_image:
+        name: apache_web
+        source: build
+        build:
+          path: .
+      register: docker_image_result
+
+    - name: Run Apache Docker container
+      docker_container:
+        name: apache_container
+        image: apache_web
+        ports:
+          - "80:80"
+        state: started
+
